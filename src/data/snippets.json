@@ -1,0 +1,27 @@
+[
+  {
+    "id": 1,
+    "language": "javascript",
+    "code": "const greet = (name) => {\n  return `Hello, ${name}!`;\n};\n\ngreet('Flowtype');"
+  },
+  {
+    "id": 2,
+    "language": "javascript",
+    "code": "document.addEventListener('click', () => {\n  console.log('Document clicked!');\n});"
+  },
+  {
+    "id": 3,
+    "language": "python",
+    "code": "def calculate_sum(a, b):\n    \"\"\"This function returns the sum of two numbers.\"\"\"\n    return a + b"
+  },
+  {
+    "id": 4,
+    "language": "python",
+    "code": "for i in range(5):\n    print(f\"Iteration {i}\")"
+  },
+  {
+    "id": 5,
+    "language": "java",
+    "code": "public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, Java!\");\n    }\n}"
+  }
+]
