@@ -1,5 +1,5 @@
 <script setup>
-// Di sini nanti kita akan meletakkan komponen utama
+import TypingView from './views/TypingView.vue';
 </script>
 
 <template>
@@ -10,7 +10,7 @@
     </header>
 
     <main class="w-full max-w-4xl">
-      <p class="text-center">Komponen utama akan muncul di sini!</p>
+      <TypingView />
     </main>
   </div>
 </template>
