@@ -2,26 +2,251 @@
   {
     "id": 1,
     "language": "javascript",
-    "code": "const greet = (name) => {\n  return `Hello, ${name}!`;\n};\n\ngreet('Flowtype');"
+    "code": "const greet = (name) => {\n  console.log(`Hello, ${name}!`);\n};\ngreet('Flowtype');"
   },
   {
     "id": 2,
     "language": "javascript",
-    "code": "document.addEventListener('click', () => {\n  console.log('Document clicked!');\n});"
+    "code": "const numbers = [1, 2, 3, 4, 5];\nconst squared = numbers.map(n => n * n);\nconsole.log(squared);"
   },
   {
     "id": 3,
-    "language": "python",
-    "code": "def calculate_sum(a, b):\n    \"\"\"This function returns the sum of two numbers.\"\"\"\n    return a + b"
+    "language": "javascript",
+    "code": "async function fetchData(url) {\n  const response = await fetch(url);\n  const data = await response.json();\n  return data;\n}"
   },
   {
     "id": 4,
-    "language": "python",
-    "code": "for i in range(5):\n    print(f\"Iteration {i}\")"
+    "language": "javascript",
+    "code": "const person = {\n  firstName: 'John',\n  lastName: 'Doe',\n  age: 30\n};\nconst { firstName, age } = person;"
   },
   {
     "id": 5,
+    "language": "javascript",
+    "code": "document.getElementById('app').innerHTML = '<h1>Welcome!</h1>';"
+  },
+  {
+    "id": 6,
+    "language": "python",
+    "code": "def calculate_sum(a, b):\n    \"\"\"This function returns the sum of two numbers.\"\"\"\n    return a + b\n\nresult = calculate_sum(5, 10)"
+  },
+  {
+    "id": 7,
+    "language": "python",
+    "code": "fruits = ['apple', 'banana', 'cherry']\nfor fruit in fruits:\n    print(fruit.upper())"
+  },
+  {
+    "id": 8,
+    "language": "python",
+    "code": "with open('file.txt', 'w') as f:\n    f.write('Hello, world!')"
+  },
+  {
+    "id": 9,
+    "language": "python",
+    "code": "squares = {x: x*x for x in range(6)}\nprint(squares)"
+  },
+  {
+    "id": 10,
+    "language": "python",
+    "code": "import random\n\nnumber = random.randint(1, 100)\nprint(f\"Random number: {number}\")"
+  },
+  {
+    "id": 11,
     "language": "java",
     "code": "public class HelloWorld {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, Java!\");\n    }\n}"
+  },
+  {
+    "id": 12,
+    "language": "java",
+    "code": "import java.util.ArrayList;\n\nArrayList<String> cars = new ArrayList<String>();\ncars.add(\"Volvo\");\ncars.add(\"BMW\");"
+  },
+  {
+    "id": 13,
+    "language": "java",
+    "code": "for (int i = 0; i < 5; i++) {\n  System.out.println(i);\n}"
+  },
+  {
+    "id": 14,
+    "language": "java",
+    "code": "public int add(int x, int y) {\n    return x + y;\n}"
+  },
+  {
+    "id": 15,
+    "language": "java",
+    "code": "String message = \"Flowtype is awesome\";\nif (message.contains(\"awesome\")) {\n    System.out.println(\"Message contains the word.\");\n}"
+  },
+  {
+    "id": 16,
+    "language": "php",
+    "code": "<?php\n$greeting = 'Hello, World!';\necho $greeting;\n?>"
+  },
+  {
+    "id": 17,
+    "language": "php",
+    "code": "<?php\n$colors = array('red', 'green', 'blue');\nforeach ($colors as $value) {\n  echo $value . \"\\n\";\n}\n?>"
+  },
+  {
+    "id": 18,
+    "language": "php",
+    "code": "<?php\nfunction sum($x, $y) {\n  return $x + $y;\n}\n\necho sum(15, 5);\n?>"
+  },
+  {
+    "id": 19,
+    "language": "php",
+    "code": "<?php\n$age = 25;\nif ($age > 18) {\n  echo 'You are an adult.';\n}\n?>"
+  },
+  {
+    "id": 20,
+    "language": "php",
+    "code": "<?php\n$user = ['name' => 'John Doe', 'email' => 'john@example.com'];\necho $user['name'];\n?>"
+  },
+  {
+    "id": 21,
+    "language": "javascript",
+    "code": "const add = (a, b) => a + b;\nconsole.log(add(5, 10));"
+  },
+  {
+    "id": 22,
+    "language": "python",
+    "code": "def factorial(n):\n    if n == 0:\n        return 1\n    else:\n        return n * factorial(n - 1)\n\nprint(factorial(5))"
+  },
+  {
+    "id": 23,
+    "language": "java",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello, Java!\");\n    }\n}"
+  },
+  {
+    "id": 24,
+    "language": "php",
+    "code": "<?php\nfunction greet($name) {\n    return \"Hello, $name!\";\n}\necho greet('Flowtype');\n?>"
+  },
+  {
+    "id": 25,
+    "language": "javascript",
+    "code": "const numbers = [1, 2, 3, 4, 5];\nconst doubled = numbers.map(n => n * 2);\nconsole.log(doubled);"
+  },
+  {
+    "id": 26,
+    "language": "python",
+    "code": "import random\n\nprint(random.choice(['apple', 'banana', 'cherry']))"
+  },
+  {
+    "id": 27,
+    "language": "java",
+    "code": "import java.util.List;\nimport java.util.ArrayList;\n\nList<String> list = new ArrayList<>();\nlist.add(\"Hello\");\nlist.add(\"World\");"
+  },
+  {
+    "id": 28,
+    "language": "php",
+    "code": "<?php\n$fruits = ['apple', 'banana', 'cherry'];\nforeach ($fruits as $fruit) {\n    echo $fruit . \"\\n\";\n}\n?>"
+  },
+  {
+    "id": 29,
+    "language": "javascript",
+    "code": "const person = {\n  name: 'John',\n  age: 30,\n  greet() {\n    console.log(`Hello, my name is ${this.name}`);\n  }\n};\nperson.greet();"
+  },
+  {
+    "id": 30,
+    "language": "python",
+    "code": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n - 1) + fibonacci(n - 2)\n\nprint(fibonacci(10))"
+  },
+  {
+    "id": 31,
+    "language": "java",
+    "code": "public class Calculator {\n    public int add(int a, int b) {\n        return a + b;\n    }\n}\n\nCalculator calc = new Calculator();\nSystem.out.println(calc.add(5, 10));"
+  },
+  {
+    "id": 32,
+    "language": "php",
+    "code": "<?php\n$numbers = range(1, 10);\n$squared = array_map(fn($n) => $n * $n, $numbers);\necho implode(', ', $squared);\n?>"
+  },
+  {
+    "id": 33,
+    "language": "javascript",
+    "code": "const fetchData = async (url) => {\n  const response = await fetch(url);\n  const data = await response.json();\n  return data;\n};\n\nfetchData('https://api.example.com/data').then(data => console.log(data));"
+  },
+  {
+    "id": 34,
+    "language": "python",
+    "code": "import requests\n\nresponse = requests.get('https://api.example.com/data')\ndata = response.json()\nprint(data)"
+  },
+  {
+    "id": 35,
+    "language": "java",
+    "code": "import java.net.HttpURLConnection;\nimport java.net.URL;\n\npublic class HttpExample {\n    public static void main(String[] args) throws Exception {\n        URL url = new URL(\"https://api.example.com/data\");\n        HttpURLConnection con = (HttpURLConnection) url.openConnection();\n        con.setRequestMethod(\"GET\");\n        int responseCode = con.getResponseCode();\n        System.out.println(\"Response Code: \" + responseCode);\n    }\n}"
+  },
+  {
+    "id": 36,
+    "language": "php",
+    "code": "<?php\n$response = file_get_contents('https://api.example.com/data');\ndata = json_decode($response, true);\nprint_r($data);\n?>"
+  },
+  {
+    "id": 37,
+    "language": "javascript",
+    "code": "const todos = [{ id: 1, title: 'Learn JavaScript' }, { id: 2, title: 'Learn Flowtype' }];\ntodos.forEach(todo => console.log(todo.title));"
+  },
+  {
+    "id": 38,
+    "language": "python",
+    "code": "class Person:\n    def __init__(self, name):\n        self.name = name\n\n    def greet(self):\n        print(f'Hello, {self.name}!')\n\np = Person('Flowtype')\np.greet()"
+  },
+  {
+    "id": 39,
+    "language": "java",
+    "code": "public class Animal {\n    String name;\n\n    public Animal(String name) {\n        this.name = name;\n    }\n\n    public void speak() {\n        System.out.println(name + \" makes a sound.\");\n    }\n}\n\nAnimal dog = new Animal(\"Dog\");\ndog.speak();"
+  },
+  {
+    "id": 40,
+    "language": "php",
+    "code": "<?php\nclass Car {\n    public $brand;\n\n    public function __construct($brand) {\n        $this->brand = $brand;\n    }\n\n    public function honk() {\n        echo \"Beep! I am a \" . $this->brand . \".\";\n    }\n}\n\n$myCar = new Car('Toyota');\n$myCar->honk();"
+  },
+  {
+    "id": 41,
+    "language": "javascript",
+    "code": "const numbers = [1, 2, 3, 4, 5];\nconst sum = numbers.reduce((acc, curr) => acc + curr, 0);\nconsole.log(sum);"
+  },
+  {
+    "id": 42,
+    "language": "python",
+    "code": "def is_prime(n):\n    if n <= 1:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprint(is_prime(11))"
+  },
+  {
+    "id": 43,
+    "language": "java",
+    "code": "import java.util.Arrays;\n\npublic class Main {\n    public static void main(String[] args) {\n        int[] numbers = {1, 2, 3, 4, 5};\n        Arrays.stream(numbers).forEach(System.out::println);\n    }\n}"
+  },
+  {
+    "id": 44,
+    "language": "php",
+    "code": "<?php\n$names = ['Alice', 'Bob', 'Charlie'];\necho implode(', ', $names);\n?>"
+  },
+  {
+    "id": 45,
+    "language": "javascript",
+    "code": "const person = { name: 'Alice', age: 25 };\nconst { name, age } = person;\nconsole.log(name, age);"
+  },
+  {
+    "id": 46,
+    "language": "python",
+    "code": "def reverse_string(s):\n    return s[::-1]\n\nprint(reverse_string('Flowtype'))"
+  },
+  {
+    "id": 47,
+    "language": "java",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        String str = \"Hello, Java!\";\n        System.out.println(str.toUpperCase());\n    }\n}"
+  },
+  {
+    "id": 48,
+    "language": "php",
+    "code": "<?php\n$numbers = [1, 2, 3, 4, 5];\necho array_sum($numbers);\n?>"
+  },
+  {
+    "id": 49,
+    "language": "javascript",
+    "code": "const fruits = ['apple', 'banana', 'cherry'];\nconst fruitList = fruits.map(fruit => `<li>${fruit}</li>`).join('');\ndocument.getElementById('fruits').innerHTML = `<ul>${fruitList}</ul>`;"
+  },
+  {
+    "id": 50,
+    "language": "python",
+    "code": "import datetime\n\nnow = datetime.datetime.now()\nprint(now.strftime('%Y-%m-%d %H:%M:%S'))"
   }
 ]
