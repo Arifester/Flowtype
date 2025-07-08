@@ -1,69 +1,95 @@
 <script setup>
-import { ref } from 'vue'
-import Settings from '../components/Settings.vue'
-import CodeDisplay from '../components/CodeDisplay.vue'
-
-// Import data statis kita
+import { ref, watch, nextTick } from 'vue';
+import Settings from '../components/Settings.vue';
+import CodeDisplay from '../components/CodeDisplay.vue';
 import allSnippets from '../data/snippets.json';
 
 // --- STATE MANAGEMENT ---
-// Menyimpan state atau data yang bisa berubah-ubah.
-const selectedLanguage = ref('javascript'); // Nilai default saat aplikasi dimuat
-const selectedDuration = ref(60); // Nilai default
+const selectedLanguage = ref('javascript');
+const selectedDuration = ref(60);
 const codeSnippet = ref('Pilih bahasa dan tekan Start untuk memulai...');
-const isLoading = ref(false);
+
+// State untuk logika pengetikan
+const userInput = ref(''); // Menyimpan semua yang diketik user
+const charStates = ref([]); // Array untuk status tiap karakter [untyped, correct, incorrect]
+const currentIndex = ref(0); // Posisi kursor
+const inputField = ref(null); // Referensi ke elemen input
 
 // --- FUNCTIONS ---
-
-// Fungsi ini dipanggil oleh Settings.vue ketika dropdown bahasa berubah
 const updateLanguage = (language) => {
   selectedLanguage.value = language;
-  console.log('Bahasa dipilih:', selectedLanguage.value);
 };
-
-// Fungsi ini dipanggil oleh Settings.vue ketika dropdown waktu berubah
 const updateDuration = (duration) => {
   selectedDuration.value = duration;
-  console.log('Durasi dipilih:', selectedDuration.value);
 };
 
-// Fungsi utama yang dipanggil saat tombol "Start" ditekan
+// Fungsi untuk me-reset state dan memulai game baru
 const startGame = () => {
-  console.log('Memulai game!');
-  isLoading.value = true;
-
-  // Filter snippets berdasarkan bahasa yang dipilih
-  const filteredSnippets = allSnippets.filter(
-    s => s.language === selectedLanguage.value
-  );
-
-  if (filteredSnippets.length === 0) {
-    codeSnippet.value = `Maaf, belum ada snippet untuk bahasa ${selectedLanguage.value}.`;
-    isLoading.value = false;
-    return;
-  }
-
-  // Pilih satu snippet secara acak dari yang sudah difilter
+  const filteredSnippets = allSnippets.filter(s => s.language === selectedLanguage.value);
   const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
   codeSnippet.value = filteredSnippets[randomIndex].code;
 
-  isLoading.value = false;
+  // Reset semua state pengetikan
+  userInput.value = '';
+  currentIndex.value = 0;
+  // Inisialisasi 'charStates' dengan status 'untyped' untuk setiap karakter
+  charStates.value = Array(codeSnippet.value.length).fill('untyped');
+
+  // Fokus otomatis ke input field setelah kode baru dimuat
+  nextTick(() => {
+    inputField.value?.focus();
+  });
 };
+
+// Menjalankan validasi setiap kali user mengetik
+watch(userInput, (newInput) => {
+  for (let i = 0; i < charStates.value.length; i++) {
+    const typedChar = newInput[i];
+    const originalChar = codeSnippet.value[i];
+
+    if (typedChar === undefined) {
+      // Karakter yang belum diketik atau sudah dihapus
+      charStates.value[i] = 'untyped';
+    } else if (typedChar === originalChar) {
+      // Karakter benar
+      charStates.value[i] = 'correct';
+    } else {
+      // Karakter salah
+      charStates.value[i] = 'incorrect';
+    }
+  }
+  // Update posisi kursor
+  currentIndex.value = newInput.length;
+});
+
+// Fungsi untuk memastikan input field selalu fokus saat user mengklik area kode
+const focusInput = () => {
+  inputField.value?.focus();
+}
+
 </script>
 
 <template>
   <div class="w-full">
-    <Settings 
+    <Settings
       @languageChange="updateLanguage"
       @durationChange="updateDuration"
       @start="startGame"
     />
 
-    <div v-if="isLoading" class="text-center p-8">
-      <p>Memuat...</p>
+    <div @click="focusInput" class="relative cursor-text">
+      <CodeDisplay
+        :code="codeSnippet"
+        :char-states="charStates"
+        :current-index="currentIndex"
+      />
+      <input
+        ref="inputField"
+        v-model="userInput"
+        type="text"
+        class="absolute top-0 left-0 w-full h-full opacity-0 p-6"
+        autofocus
+      />
     </div>
-
-    <CodeDisplay v-else :code="codeSnippet" />
-    
-    </div>
+  </div>
 </template>
