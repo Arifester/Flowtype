@@ -30,18 +30,9 @@ defineProps({
             'outline-red-500 outline': index === currentIndex && charStates[index] === 'incorrect',
           }
         ]"
-      >{{ char === '\n' ? '↵\n' : char }}</span>
-    </div>
+      >{{ char }}</span> </div>
   </div>
 </template>
 
 <style scoped>
-/* Menambahkan style khusus untuk karakter newline */
-span.text-slate-400:has(br) {
-  display: inline-block;
-}
-.text-slate-400 span:empty {
-  display: inline-block;
-  width: 0.5em; /* Memberi lebar pada spasi agar terlihat */
-}
 </style>
