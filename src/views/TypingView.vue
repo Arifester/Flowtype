@@ -5,38 +5,56 @@ import CodeDisplay from '../components/CodeDisplay.vue';
 import Results from '../components/Results.vue';
 import allSnippets from '../data/snippets.json';
 
-// --- STATE MANAGEMENT ---
+// --- FUNGSI BARU YANG LEBIH PINTAR ---
+const dedent = (str) => {
+  const lines = str.split('\n');
+
+  // Hapus baris kosong di awal jika ada
+  if (lines[0] === '') {
+    lines.shift();
+  }
+
+  // Cari indentasi dasar
+  let baseIndent = Infinity;
+  for (const line of lines) {
+    if (line.trim().length > 0) { // Hanya cek baris yang ada isinya
+      const indent = line.match(/^\s*/)[0].length;
+      if (indent < baseIndent) {
+        baseIndent = indent;
+      }
+    }
+  }
+
+  // Kurangi setiap baris dengan indentasi dasar
+  if (baseIndent < Infinity) {
+    return lines.map(line => line.substring(baseIndent)).join('\n');
+  }
+
+  return str; // Kembalikan string asli jika tidak ada indentasi
+};
+
+
+// --- STATE MANAGEMENT --- (Tetap sama)
 const selectedLanguage = ref('javascript');
 const selectedDuration = ref(60);
 const codeSnippet = ref('Pilih bahasa dan tekan Start untuk memulai...');
-
-// State untuk logika pengetikan
 const userInput = ref('');
 const charStates = ref([]);
 const currentIndex = ref(0);
 const inputField = ref(null);
-
-// State untuk game flow
 const gameStatus = ref('ready');
 const timer = ref(60);
 let timerId = null;
-
-// State untuk hasil
 const wpm = ref(0);
 const accuracy = ref(0);
 const errors = ref(0);
-const totalCorrectChars = ref(0); // <-- VARIABEL BARU untuk mengakumulasi skor
+const totalCorrectChars = ref(0);
 
-// --- FUNCTIONS ---
+// --- FUNCTIONS --- (Sedikit modifikasi)
 const updateLanguage = (language) => { selectedLanguage.value = language; };
 const updateDuration = (duration) => { 
   selectedDuration.value = duration;
   timer.value = duration;
-};
-
-// Fungsi untuk membersihkan indentasi aneh dari JSON
-const cleanSnippet = (snippet) => {
-  return snippet.split('\n').map(line => line.trim()).join('\n');
 };
 
 const loadNextSnippet = () => {
@@ -44,22 +62,23 @@ const loadNextSnippet = () => {
   const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
   const rawSnippet = filteredSnippets[randomIndex].code;
   
-  codeSnippet.value = cleanSnippet(rawSnippet); // Bersihkan snippet baru
+  // PANGGIL FUNGSI DEDENT DI SINI!
+  codeSnippet.value = dedent(rawSnippet);
 
-  // Reset HANYA state yang berhubungan dengan pengetikan
   userInput.value = '';
   currentIndex.value = 0;
   charStates.value = Array(codeSnippet.value.length).fill('untyped');
 };
 
+// Sisa fungsi (startGame, startTimer, dll) tetap sama persis seperti sebelumnya
 const startGame = () => {
   gameStatus.value = 'ready';
-  totalCorrectChars.value = 0; // Reset akumulator skor saat game baru dimulai
+  totalCorrectChars.value = 0;
   errors.value = 0;
   timer.value = selectedDuration.value;
   if(timerId) clearInterval(timerId);
 
-  loadNextSnippet(); // Panggil fungsi ini untuk memuat snippet pertama
+  loadNextSnippet();
   
   nextTick(() => inputField.value?.focus());
 };
@@ -110,16 +129,10 @@ watch(userInput, (newInput) => {
   }
   currentIndex.value = newInput.length;
 
-  // *** INI PERUBAHAN UTAMANYA ***
-  // Jika snippet selesai diketik
   if (currentIndex.value === codeSnippet.value.length) {
-    // Tambahkan karakter benar dari snippet ini ke total
     totalCorrectChars.value += codeSnippet.value.length;
-    // Hitung kesalahan dan tambahkan ke total
     const errorCount = charStates.value.filter(state => state === 'incorrect').length;
     errors.value += errorCount;
-
-    // Langsung muat snippet berikutnya tanpa menghentikan game
     loadNextSnippet();
   }
 });

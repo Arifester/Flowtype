@@ -4,12 +4,10 @@ defineProps({
     type: String,
     required: true,
   },
-  // Menerima array status untuk setiap karakter
   charStates: {
     type: Array,
     required: true,
   },
-  // Menerima posisi kursor saat ini
   currentIndex: {
     type: Number,
     required: true,
@@ -18,22 +16,32 @@ defineProps({
 </script>
 
 <template>
-  <div class="bg-slate-800 p-6 rounded-lg text-lg leading-relaxed shadow-lg relative">
-    <pre><code class="whitespace-pre-wrap break-words">
+  <div class="bg-slate-800 p-6 rounded-lg text-lg leading-relaxed shadow-lg flex">
+    <div class="whitespace-pre-wrap break-words w-full">
       <span
         v-for="(char, index) in code"
         :key="index"
         :class="[
-          // Terapkan class berdasarkan status dari 'charStates'
           {
             'text-emerald-400': charStates[index] === 'correct',
             'text-red-500 bg-red-900/50 rounded-sm': charStates[index] === 'incorrect',
             'text-slate-400': charStates[index] === 'untyped',
-            // Class untuk kursor
-            'bg-slate-600 rounded-sm': index === currentIndex
+            'bg-slate-600 rounded-sm': index === currentIndex && charStates[index] !== 'incorrect',
+            'outline-red-500 outline': index === currentIndex && charStates[index] === 'incorrect',
           }
         ]"
-      >{{ char }}</span>
-    </code></pre>
+      >{{ char === '\n' ? '↵\n' : char }}</span>
+    </div>
   </div>
 </template>
+
+<style scoped>
+/* Menambahkan style khusus untuk karakter newline */
+span.text-slate-400:has(br) {
+  display: inline-block;
+}
+.text-slate-400 span:empty {
+  display: inline-block;
+  width: 0.5em; /* Memberi lebar pada spasi agar terlihat */
+}
+</style>
