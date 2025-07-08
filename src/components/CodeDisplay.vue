@@ -17,10 +17,11 @@ defineProps({
 
 <template>
   <div class="bg-slate-800 p-6 rounded-lg text-lg leading-relaxed shadow-lg flex">
-    <div class="whitespace-pre-wrap break-words w-full">
+    <div class="whitespace-pre-wrap break-words w-full font-mono">
       <span
         v-for="(char, index) in code"
         :key="index"
+        :id="index === currentIndex ? 'cursor' : null"
         :class="[
           {
             'text-emerald-400': charStates[index] === 'correct',
@@ -30,9 +31,11 @@ defineProps({
             'outline-red-500 outline': index === currentIndex && charStates[index] === 'incorrect',
           }
         ]"
-      >{{ char }}</span> </div>
+      >{{ char }}</span>
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* Tidak ada style tambahan yang dibutuhkan di sini */
 </style>

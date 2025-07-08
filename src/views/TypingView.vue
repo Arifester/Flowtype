@@ -5,19 +5,14 @@ import CodeDisplay from '../components/CodeDisplay.vue';
 import Results from '../components/Results.vue';
 import allSnippets from '../data/snippets.json';
 
-// --- FUNGSI BARU YANG LEBIH PINTAR ---
+// --- FUNGSI PINTAR UNTUK INDENTASI ---
 const dedent = (str) => {
   const lines = str.split('\n');
+  if (lines[0] === '') lines.shift();
 
-  // Hapus baris kosong di awal jika ada
-  if (lines[0] === '') {
-    lines.shift();
-  }
-
-  // Cari indentasi dasar
   let baseIndent = Infinity;
   for (const line of lines) {
-    if (line.trim().length > 0) { // Hanya cek baris yang ada isinya
+    if (line.trim().length > 0) {
       const indent = line.match(/^\s*/)[0].length;
       if (indent < baseIndent) {
         baseIndent = indent;
@@ -25,16 +20,13 @@ const dedent = (str) => {
     }
   }
 
-  // Kurangi setiap baris dengan indentasi dasar
   if (baseIndent < Infinity) {
     return lines.map(line => line.substring(baseIndent)).join('\n');
   }
-
-  return str; // Kembalikan string asli jika tidak ada indentasi
+  return str;
 };
 
-
-// --- STATE MANAGEMENT --- (Tetap sama)
+// --- STATE MANAGEMENT ---
 const selectedLanguage = ref('javascript');
 const selectedDuration = ref(60);
 const codeSnippet = ref('Pilih bahasa dan tekan Start untuk memulai...');
@@ -42,15 +34,17 @@ const userInput = ref('');
 const charStates = ref([]);
 const currentIndex = ref(0);
 const inputField = ref(null);
-const gameStatus = ref('ready');
+const gameStatus = ref('ready'); // 'ready', 'typing', 'finished'
 const timer = ref(60);
 let timerId = null;
+
+// State untuk hasil
 const wpm = ref(0);
 const accuracy = ref(0);
 const errors = ref(0);
-const totalCorrectChars = ref(0);
+const totalCorrectChars = ref(0); // Akumulator skor
 
-// --- FUNCTIONS --- (Sedikit modifikasi)
+// --- FUNCTIONS ---
 const updateLanguage = (language) => { selectedLanguage.value = language; };
 const updateDuration = (duration) => { 
   selectedDuration.value = duration;
@@ -62,7 +56,6 @@ const loadNextSnippet = () => {
   const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
   const rawSnippet = filteredSnippets[randomIndex].code;
   
-  // PANGGIL FUNGSI DEDENT DI SINI!
   codeSnippet.value = dedent(rawSnippet);
 
   userInput.value = '';
@@ -70,7 +63,6 @@ const loadNextSnippet = () => {
   charStates.value = Array(codeSnippet.value.length).fill('untyped');
 };
 
-// Sisa fungsi (startGame, startTimer, dll) tetap sama persis seperti sebelumnya
 const startGame = () => {
   gameStatus.value = 'ready';
   totalCorrectChars.value = 0;
@@ -103,7 +95,6 @@ const finishGame = () => {
 const calculateResults = () => {
   const finalCorrectCharsInCurrentSnippet = userInput.value.split('').filter((char, index) => char === codeSnippet.value[index]).length;
   const finalTotalCorrect = totalCorrectChars.value + finalCorrectCharsInCurrentSnippet;
-
   const totalTyped = totalCorrectChars.value + userInput.value.length;
   
   if (totalTyped > 0) {
@@ -116,6 +107,13 @@ const calculateResults = () => {
   wpm.value = Math.round((finalTotalCorrect / 5) / timeInMinutes);
 };
 
+const focusInput = () => inputField.value?.focus();
+
+const handleTab = () => {
+  userInput.value += '  '; // Tambah 2 spasi untuk indentasi
+};
+
+// --- WATCHERS ---
 watch(userInput, (newInput) => {
   if (gameStatus.value === 'finished') return;
   if (gameStatus.value === 'ready' && newInput.length > 0) startTimer();
@@ -137,7 +135,15 @@ watch(userInput, (newInput) => {
   }
 });
 
-const focusInput = () => inputField.value?.focus();
+watch(currentIndex, () => {
+  nextTick(() => {
+    const cursorEl = document.getElementById('cursor');
+    if (cursorEl) {
+      cursorEl.scrollIntoView({ block: 'nearest' });
+    }
+  });
+});
+
 </script>
 
 <template>
@@ -148,8 +154,11 @@ const focusInput = () => inputField.value?.focus();
       @durationChange="updateDuration"
       @start="startGame"
     />
+
     <div v-if="gameStatus !== 'finished'">
-      <div class="text-center text-5xl font-bold text-emerald-400 mb-6">{{ timer }}</div>
+      <div class="text-center text-5xl font-bold text-emerald-400 mb-6">
+        {{ timer }}
+      </div>
       <div @click="focusInput" class="relative cursor-text">
         <CodeDisplay
           :code="codeSnippet"
@@ -159,12 +168,15 @@ const focusInput = () => inputField.value?.focus();
         <input
           ref="inputField"
           v-model="userInput"
+          @keydown.tab.prevent="handleTab"
           type="text"
           class="absolute top-0 left-0 w-full h-full opacity-0 p-6"
           :disabled="gameStatus === 'finished'"
+          autofocus
         />
       </div>
     </div>
+
     <Results 
       v-if="gameStatus === 'finished'"
       :wpm="wpm"
