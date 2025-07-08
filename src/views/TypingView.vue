@@ -2,7 +2,7 @@
 import { ref, watch, nextTick } from 'vue';
 import Settings from '../components/Settings.vue';
 import CodeDisplay from '../components/CodeDisplay.vue';
-import Results from '../components/Results.vue'; // Impor komponen hasil
+import Results from '../components/Results.vue';
 import allSnippets from '../data/snippets.json';
 
 // --- STATE MANAGEMENT ---
@@ -17,7 +17,7 @@ const currentIndex = ref(0);
 const inputField = ref(null);
 
 // State untuk game flow
-const gameStatus = ref('ready'); // 'ready', 'typing', 'finished'
+const gameStatus = ref('ready');
 const timer = ref(60);
 let timerId = null;
 
@@ -25,6 +25,7 @@ let timerId = null;
 const wpm = ref(0);
 const accuracy = ref(0);
 const errors = ref(0);
+const totalCorrectChars = ref(0); // <-- VARIABEL BARU untuk mengakumulasi skor
 
 // --- FUNCTIONS ---
 const updateLanguage = (language) => { selectedLanguage.value = language; };
@@ -33,19 +34,33 @@ const updateDuration = (duration) => {
   timer.value = duration;
 };
 
-const startGame = () => {
+// Fungsi untuk membersihkan indentasi aneh dari JSON
+const cleanSnippet = (snippet) => {
+  return snippet.split('\n').map(line => line.trim()).join('\n');
+};
+
+const loadNextSnippet = () => {
   const filteredSnippets = allSnippets.filter(s => s.language === selectedLanguage.value);
   const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
-  codeSnippet.value = filteredSnippets[randomIndex].code;
+  const rawSnippet = filteredSnippets[randomIndex].code;
+  
+  codeSnippet.value = cleanSnippet(rawSnippet); // Bersihkan snippet baru
 
-  // Reset semua state
-  gameStatus.value = 'ready';
+  // Reset HANYA state yang berhubungan dengan pengetikan
   userInput.value = '';
   currentIndex.value = 0;
   charStates.value = Array(codeSnippet.value.length).fill('untyped');
+};
+
+const startGame = () => {
+  gameStatus.value = 'ready';
+  totalCorrectChars.value = 0; // Reset akumulator skor saat game baru dimulai
+  errors.value = 0;
   timer.value = selectedDuration.value;
   if(timerId) clearInterval(timerId);
 
+  loadNextSnippet(); // Panggil fungsi ini untuk memuat snippet pertama
+  
   nextTick(() => inputField.value?.focus());
 };
 
@@ -67,47 +82,45 @@ const finishGame = () => {
 };
 
 const calculateResults = () => {
-  const typedChars = userInput.value.length;
-  const correctChars = charStates.value.filter(state => state === 'correct').length;
-  const errorCount = charStates.value.filter(state => state === 'incorrect').length;
+  const finalCorrectCharsInCurrentSnippet = userInput.value.split('').filter((char, index) => char === codeSnippet.value[index]).length;
+  const finalTotalCorrect = totalCorrectChars.value + finalCorrectCharsInCurrentSnippet;
 
-  errors.value = errorCount;
+  const totalTyped = totalCorrectChars.value + userInput.value.length;
   
-  if (typedChars > 0) {
-    accuracy.value = Math.round((correctChars / typedChars) * 100);
+  if (totalTyped > 0) {
+    accuracy.value = Math.round((finalTotalCorrect / totalTyped) * 100);
   } else {
     accuracy.value = 0;
   }
   
-  // WPM = (jumlah karakter benar / 5) / (waktu dalam menit)
   const timeInMinutes = selectedDuration.value / 60;
-  wpm.value = Math.round((correctChars / 5) / timeInMinutes);
+  wpm.value = Math.round((finalTotalCorrect / 5) / timeInMinutes);
 };
 
 watch(userInput, (newInput) => {
   if (gameStatus.value === 'finished') return;
-  
-  if (gameStatus.value === 'ready' && newInput.length > 0) {
-    startTimer();
-  }
+  if (gameStatus.value === 'ready' && newInput.length > 0) startTimer();
 
   for (let i = 0; i < codeSnippet.value.length; i++) {
     const typedChar = newInput[i];
     const originalChar = codeSnippet.value[i];
-
-    if (typedChar === undefined) {
-      charStates.value[i] = 'untyped';
-    } else if (typedChar === originalChar) {
-      charStates.value[i] = 'correct';
-    } else {
-      charStates.value[i] = 'incorrect';
-    }
+    if (typedChar === undefined) charStates.value[i] = 'untyped';
+    else if (typedChar === originalChar) charStates.value[i] = 'correct';
+    else charStates.value[i] = 'incorrect';
   }
   currentIndex.value = newInput.length;
 
-  // Cek jika user selesai mengetik sebelum waktu habis
+  // *** INI PERUBAHAN UTAMANYA ***
+  // Jika snippet selesai diketik
   if (currentIndex.value === codeSnippet.value.length) {
-    finishGame();
+    // Tambahkan karakter benar dari snippet ini ke total
+    totalCorrectChars.value += codeSnippet.value.length;
+    // Hitung kesalahan dan tambahkan ke total
+    const errorCount = charStates.value.filter(state => state === 'incorrect').length;
+    errors.value += errorCount;
+
+    // Langsung muat snippet berikutnya tanpa menghentikan game
+    loadNextSnippet();
   }
 });
 
@@ -122,11 +135,8 @@ const focusInput = () => inputField.value?.focus();
       @durationChange="updateDuration"
       @start="startGame"
     />
-
     <div v-if="gameStatus !== 'finished'">
-      <div class="text-center text-5xl font-bold text-emerald-400 mb-6">
-        {{ timer }}
-      </div>
+      <div class="text-center text-5xl font-bold text-emerald-400 mb-6">{{ timer }}</div>
       <div @click="focusInput" class="relative cursor-text">
         <CodeDisplay
           :code="codeSnippet"
@@ -142,7 +152,6 @@ const focusInput = () => inputField.value?.focus();
         />
       </div>
     </div>
-
     <Results 
       v-if="gameStatus === 'finished'"
       :wpm="wpm"
