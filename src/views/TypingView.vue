@@ -4,62 +4,63 @@ import Settings from '../components/Settings.vue'
 import CodeDisplay from '../components/CodeDisplay.vue'
 
 // Import data statis kita
-import allSnippets from '../data/snippets.json'; 
-// Import service Gemini (kita akan buat ini nanti)
-// import { generateSnippet } from '../services/geminiService.js';
+import allSnippets from '../data/snippets.json';
 
 // --- STATE MANAGEMENT ---
+// Menyimpan state atau data yang bisa berubah-ubah.
+const selectedLanguage = ref('javascript'); // Nilai default saat aplikasi dimuat
+const selectedDuration = ref(60); // Nilai default
 const codeSnippet = ref('Pilih bahasa dan tekan Start untuk memulai...');
 const isLoading = ref(false);
 
-// State untuk pilihan user
-const selectedLanguage = ref('javascript');
-const selectedDuration = ref(60);
-const useAI = ref(false); // Defaultnya tidak pakai AI
+// --- FUNCTIONS ---
 
-// --- LOGIC ---
-
-// Fungsi untuk mengambil snippet dari file JSON lokal
-const getRandomSnippet = () => {
-  const filteredSnippets = allSnippets.filter(s => s.language === selectedLanguage.value);
-  if (filteredSnippets.length === 0) {
-    codeSnippet.value = `Maaf, belum ada snippet untuk bahasa ${selectedLanguage.value}.`;
-    return;
-  }
-  const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
-  codeSnippet.value = filteredSnippets[randomIndex].code;
+// Fungsi ini dipanggil oleh Settings.vue ketika dropdown bahasa berubah
+const updateLanguage = (language) => {
+  selectedLanguage.value = language;
+  console.log('Bahasa dipilih:', selectedLanguage.value);
 };
 
-// Fungsi untuk memulai game
-const startGame = async () => {
+// Fungsi ini dipanggil oleh Settings.vue ketika dropdown waktu berubah
+const updateDuration = (duration) => {
+  selectedDuration.value = duration;
+  console.log('Durasi dipilih:', selectedDuration.value);
+};
+
+// Fungsi utama yang dipanggil saat tombol "Start" ditekan
+const startGame = () => {
+  console.log('Memulai game!');
   isLoading.value = true;
-  
-  if (useAI.value) {
-    // Mode AI: Panggil Gemini API
-    try {
-      // codeSnippet.value = await generateSnippet(selectedLanguage.value, selectedDuration.value);
-      // Untuk sekarang, kita simulasi saja
-      codeSnippet.value = `// Kode ini di-generate oleh AI untuk ${selectedLanguage.value}...\nconsole.log("AI Power!");`;
-    } catch (error) {
-      console.error("Gagal fetch dari AI:", error);
-      codeSnippet.value = "Gagal mengambil kode dari AI. Silakan coba lagi.";
-    }
-  } else {
-    // Mode Default: Ambil dari JSON lokal (instan!)
-    getRandomSnippet();
+
+  // Filter snippets berdasarkan bahasa yang dipilih
+  const filteredSnippets = allSnippets.filter(
+    s => s.language === selectedLanguage.value
+  );
+
+  if (filteredSnippets.length === 0) {
+    codeSnippet.value = `Maaf, belum ada snippet untuk bahasa ${selectedLanguage.value}.`;
+    isLoading.value = false;
+    return;
   }
+
+  // Pilih satu snippet secara acak dari yang sudah difilter
+  const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
+  codeSnippet.value = filteredSnippets[randomIndex].code;
 
   isLoading.value = false;
 };
-
 </script>
 
 <template>
   <div class="w-full">
-    <Settings v-model="useAI" />
+    <Settings 
+      @languageChange="updateLanguage"
+      @durationChange="updateDuration"
+      @start="startGame"
+    />
 
     <div v-if="isLoading" class="text-center p-8">
-      <p>Mempersiapkan kode...</p>
+      <p>Memuat...</p>
     </div>
 
     <CodeDisplay v-else :code="codeSnippet" />
