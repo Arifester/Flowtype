@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch, nextTick } from 'vue';
-import { ArrowPathIcon } from '@heroicons/vue/24/solid'
+import { ArrowPathIcon, ArrowUturnLeftIcon } from '@heroicons/vue/24/solid'
 import Settings from '../components/Settings.vue';
 import CodeDisplay from '../components/CodeDisplay.vue';
 import Results from '../components/Results.vue';
@@ -20,7 +20,6 @@ const dedent = (str) => {
   return str;
 };
 
-// --- STATE MANAGEMENT ---
 const selectedLanguage = ref('javascript');
 const selectedDuration = ref(60);
 const codeSnippet = ref('Selamat datang! Atur bahasa dan waktu, lalu tekan Start.');
@@ -34,12 +33,9 @@ let timerId = null;
 const wpm = ref(0);
 const accuracy = ref(0);
 const errors = ref(0);
+const totalCorrectChars = ref(0);
+const totalTypedChars = ref(0);
 
-// --- AKUMULATOR SKOR YANG DIPERBAIKI ---
-const totalCorrectChars = ref(0); // Total karakter BENAR dari semua snippet
-const totalTypedChars = ref(0); // Total karakter DIKETIK dari semua snippet
-
-// --- FUNCTIONS ---
 const updateLanguage = (language) => { selectedLanguage.value = language; };
 const updateDuration = (duration) => {
   selectedDuration.value = duration;
@@ -58,7 +54,6 @@ const loadNextSnippet = () => {
 
 const startGame = () => {
   gameStatus.value = 'ready';
-  // Reset semua akumulator
   totalCorrectChars.value = 0;
   totalTypedChars.value = 0;
   errors.value = 0;
@@ -82,25 +77,20 @@ const finishGame = () => {
   calculateResults();
 };
 
-// --- FUNGSI PERHITUNGAN SKOR YANG DIPERBAIKI ---
+const backToMenu = () => {
+  gameStatus.value = 'waiting';
+  if (timerId) clearInterval(timerId);
+  codeSnippet.value = 'Selamat datang! Atur bahasa dan waktu, lalu tekan Start.';
+};
+
 const calculateResults = () => {
-  // Hitung karakter benar & salah dari snippet TERAKHIR (yang mungkin belum selesai)
   const correctInLastSnippet = charStates.value.slice(0, userInput.value.length).filter(state => state === 'correct').length;
   const errorsInLastSnippet = charStates.value.slice(0, userInput.value.length).filter(state => state === 'incorrect').length;
-
-  // Gabungkan dengan akumulator dari snippet sebelumnya
   const grandTotalCorrect = totalCorrectChars.value + correctInLastSnippet;
   const grandTotalTyped = totalTypedChars.value + userInput.value.length;
-  errors.value += errorsInLastSnippet; // Tambahkan error dari snippet terakhir
-
-  // Hitung Akurasi
-  if (grandTotalTyped > 0) {
-    accuracy.value = Math.round((grandTotalCorrect / grandTotalTyped) * 100);
-  } else {
-    accuracy.value = 0;
-  }
-  
-  // Hitung WPM HANYA dari karakter yang BENAR
+  errors.value += errorsInLastSnippet;
+  if (grandTotalTyped > 0) accuracy.value = Math.round((grandTotalCorrect / grandTotalTyped) * 100);
+  else accuracy.value = 0;
   const timeInMinutes = selectedDuration.value / 60;
   wpm.value = Math.round((grandTotalCorrect / 5) / timeInMinutes);
 };
@@ -108,11 +98,9 @@ const calculateResults = () => {
 const focusInput = () => inputField.value?.focus();
 const handleTab = () => { userInput.value += '  '; };
 
-// --- WATCHER DENGAN LOGIKA SKOR YANG DIPERBAIKI ---
 watch(userInput, (newInput) => {
-  if (gameStatus.value === 'finished' || gameStatus.value === 'waiting') return;
+  if (gameStatus.value !== 'ready' && gameStatus.value !== 'typing') return;
   if (gameStatus.value === 'ready' && newInput.length > 0) startTimer();
-
   for (let i = 0; i < codeSnippet.value.length; i++) {
     const typedChar = newInput[i];
     const originalChar = codeSnippet.value[i];
@@ -121,21 +109,12 @@ watch(userInput, (newInput) => {
     else charStates.value[i] = 'incorrect';
   }
   currentIndex.value = newInput.length;
-
-  // Jika snippet selesai diketik
   if (currentIndex.value === codeSnippet.value.length) {
-    // <-- AWAL DARI LOGIKA YANG BENAR
     const correctInSnippet = charStates.value.filter(state => state === 'correct').length;
     const errorsInSnippet = charStates.value.filter(state => state === 'incorrect').length;
-    
-    // Tambahkan HANYA yang benar ke total benar
     totalCorrectChars.value += correctInSnippet;
-    // Tambahkan total ketikan dari snippet ini
     totalTypedChars.value += codeSnippet.value.length;
-    // Tambahkan total kesalahan
     errors.value += errorsInSnippet;
-    // <-- AKHIR DARI LOGIKA YANG BENAR
-
     loadNextSnippet();
   }
 });
@@ -146,58 +125,60 @@ watch(currentIndex, () => {
     if (cursorEl) cursorEl.scrollIntoView({ block: 'nearest' });
   });
 });
+
 </script>
 
 <template>
   <div class="w-full">
     <Settings
-      v-if="gameStatus !== 'typing'"
+      v-if="gameStatus === 'waiting'"
       @languageChange="updateLanguage"
       @durationChange="updateDuration"
       @start="startGame"
     />
 
-    <Transition name="fade" mode="out-in">
-      <div v-if="gameStatus === 'typing' || gameStatus === 'ready'">
-        <div class="flex justify-center items-center gap-4 mb-6">
-          <div class="text-center text-5xl font-bold text-emerald-400 w-28">
-            {{ timer }}
-          </div>
-          <button @click="startGame" title="Ulangi Sesi" class="text-slate-500 hover:text-emerald-400 transition-colors">
-            <ArrowPathIcon class="h-8 w-8" />
-          </button>
+    <div v-show="gameStatus === 'typing' || gameStatus === 'ready'">
+      <div class="flex justify-center items-center gap-4 md:gap-6 mb-6">
+        <button @click="backToMenu" title="Kembali ke Menu" class="text-slate-500 hover:text-emerald-400 transition-colors">
+          <ArrowUturnLeftIcon class="h-8 w-8" />
+        </button>
+        <div class="text-center text-5xl font-bold text-emerald-400 w-28">
+          {{ timer }}
         </div>
-        <div @click="focusInput" class="relative cursor-text">
-          <CodeDisplay
-            :code="codeSnippet"
-            :char-states="charStates"
-            :current-index="currentIndex"
-          />
-          <input
-            ref="inputField"
-            v-model="userInput"
-            @keydown.tab.prevent="handleTab"
-            type="text"
-            class="absolute top-0 left-0 w-full h-full opacity-0 p-6"
-            :disabled="gameStatus !== 'ready' && gameStatus !== 'typing'"
-            autofocus
-          />
-        </div>
+        <button @click="startGame" title="Ulangi Sesi" class="text-slate-500 hover:text-emerald-400 transition-colors">
+          <ArrowPathIcon class="h-8 w-8" />
+        </button>
       </div>
-
-      <Results
-        v-else-if="gameStatus === 'finished'"
-        :wpm="wpm"
-        :accuracy="accuracy"
-        :errors="errors"
-        :language="selectedLanguage"
-        :duration="selectedDuration"
-        @retry="startGame"
-      />
-
-      <div v-else class="text-center text-slate-500 p-10 bg-slate-800 rounded-lg">
-        {{ codeSnippet }}
+      <div @click="focusInput" class="relative cursor-text">
+        <CodeDisplay
+          :code="codeSnippet"
+          :char-states="charStates"
+          :current-index="currentIndex"
+        />
+        <input
+          ref="inputField"
+          v-model="userInput"
+          @keydown.tab.prevent="handleTab"
+          type="text"
+          class="absolute top-0 left-0 w-full h-full opacity-0 p-6"
+          :disabled="gameStatus !== 'ready' && gameStatus !== 'typing'"
+          autofocus
+        />
       </div>
-    </Transition>
+    </div>
+
+    <Results
+      v-if="gameStatus === 'finished'"
+      :wpm="wpm"
+      :accuracy="accuracy"
+      :errors="errors"
+      :language="selectedLanguage"
+      :duration="selectedDuration"
+      @retry="backToMenu"
+    />
+
+    <div v-if="gameStatus === 'waiting'" class="text-center text-slate-500 p-10 bg-slate-800 rounded-lg">
+      {{ codeSnippet }}
+    </div>
   </div>
 </template>
