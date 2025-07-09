@@ -20,6 +20,7 @@ const dedent = (str) => {
   return str;
 };
 
+// --- STATE MANAGEMENT ---
 const selectedLanguage = ref('javascript');
 const selectedDuration = ref(60);
 const codeSnippet = ref('Selamat datang! Atur bahasa dan waktu, lalu tekan Start.');
@@ -27,14 +28,18 @@ const userInput = ref('');
 const charStates = ref([]);
 const currentIndex = ref(0);
 const inputField = ref(null);
-const gameStatus = ref('waiting'); // 'waiting', 'ready', 'typing', 'finished'
+const gameStatus = ref('waiting');
 const timer = ref(60);
 let timerId = null;
 const wpm = ref(0);
 const accuracy = ref(0);
 const errors = ref(0);
-const totalCorrectChars = ref(0);
 
+// --- AKUMULATOR SKOR YANG DIPERBAIKI ---
+const totalCorrectChars = ref(0); // Total karakter BENAR dari semua snippet
+const totalTypedChars = ref(0); // Total karakter DIKETIK dari semua snippet
+
+// --- FUNCTIONS ---
 const updateLanguage = (language) => { selectedLanguage.value = language; };
 const updateDuration = (duration) => {
   selectedDuration.value = duration;
@@ -53,7 +58,9 @@ const loadNextSnippet = () => {
 
 const startGame = () => {
   gameStatus.value = 'ready';
+  // Reset semua akumulator
   totalCorrectChars.value = 0;
+  totalTypedChars.value = 0;
   errors.value = 0;
   timer.value = selectedDuration.value;
   if (timerId) clearInterval(timerId);
@@ -75,22 +82,37 @@ const finishGame = () => {
   calculateResults();
 };
 
+// --- FUNGSI PERHITUNGAN SKOR YANG DIPERBAIKI ---
 const calculateResults = () => {
-  const finalCorrectCharsInCurrentSnippet = userInput.value.split('').filter((char, index) => char === codeSnippet.value[index]).length;
-  const finalTotalCorrect = totalCorrectChars.value + finalCorrectCharsInCurrentSnippet;
-  const totalTyped = totalCorrectChars.value + userInput.value.length;
-  if (totalTyped > 0) accuracy.value = Math.round((finalTotalCorrect / totalTyped) * 100);
-  else accuracy.value = 0;
+  // Hitung karakter benar & salah dari snippet TERAKHIR (yang mungkin belum selesai)
+  const correctInLastSnippet = charStates.value.slice(0, userInput.value.length).filter(state => state === 'correct').length;
+  const errorsInLastSnippet = charStates.value.slice(0, userInput.value.length).filter(state => state === 'incorrect').length;
+
+  // Gabungkan dengan akumulator dari snippet sebelumnya
+  const grandTotalCorrect = totalCorrectChars.value + correctInLastSnippet;
+  const grandTotalTyped = totalTypedChars.value + userInput.value.length;
+  errors.value += errorsInLastSnippet; // Tambahkan error dari snippet terakhir
+
+  // Hitung Akurasi
+  if (grandTotalTyped > 0) {
+    accuracy.value = Math.round((grandTotalCorrect / grandTotalTyped) * 100);
+  } else {
+    accuracy.value = 0;
+  }
+  
+  // Hitung WPM HANYA dari karakter yang BENAR
   const timeInMinutes = selectedDuration.value / 60;
-  wpm.value = Math.round((finalTotalCorrect / 5) / timeInMinutes);
+  wpm.value = Math.round((grandTotalCorrect / 5) / timeInMinutes);
 };
 
 const focusInput = () => inputField.value?.focus();
 const handleTab = () => { userInput.value += '  '; };
 
+// --- WATCHER DENGAN LOGIKA SKOR YANG DIPERBAIKI ---
 watch(userInput, (newInput) => {
   if (gameStatus.value === 'finished' || gameStatus.value === 'waiting') return;
   if (gameStatus.value === 'ready' && newInput.length > 0) startTimer();
+
   for (let i = 0; i < codeSnippet.value.length; i++) {
     const typedChar = newInput[i];
     const originalChar = codeSnippet.value[i];
@@ -99,10 +121,21 @@ watch(userInput, (newInput) => {
     else charStates.value[i] = 'incorrect';
   }
   currentIndex.value = newInput.length;
+
+  // Jika snippet selesai diketik
   if (currentIndex.value === codeSnippet.value.length) {
-    totalCorrectChars.value += codeSnippet.value.length;
-    const errorCount = charStates.value.filter(state => state === 'incorrect').length;
-    errors.value += errorCount;
+    // <-- AWAL DARI LOGIKA YANG BENAR
+    const correctInSnippet = charStates.value.filter(state => state === 'correct').length;
+    const errorsInSnippet = charStates.value.filter(state => state === 'incorrect').length;
+    
+    // Tambahkan HANYA yang benar ke total benar
+    totalCorrectChars.value += correctInSnippet;
+    // Tambahkan total ketikan dari snippet ini
+    totalTypedChars.value += codeSnippet.value.length;
+    // Tambahkan total kesalahan
+    errors.value += errorsInSnippet;
+    // <-- AKHIR DARI LOGIKA YANG BENAR
+
     loadNextSnippet();
   }
 });
@@ -159,6 +192,7 @@ watch(currentIndex, () => {
         :errors="errors"
         :language="selectedLanguage"
         :duration="selectedDuration"
+        @retry="startGame"
       />
 
       <div v-else class="text-center text-slate-500 p-10 bg-slate-800 rounded-lg">
