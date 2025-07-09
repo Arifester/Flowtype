@@ -29,12 +29,12 @@ const dedent = (str) => {
 // --- STATE MANAGEMENT ---
 const selectedLanguage = ref('javascript');
 const selectedDuration = ref(60);
-const codeSnippet = ref('Pilih bahasa dan tekan Start untuk memulai...');
+const codeSnippet = ref('Selamat datang! Atur bahasa dan waktu, lalu tekan Start.');
 const userInput = ref('');
 const charStates = ref([]);
 const currentIndex = ref(0);
 const inputField = ref(null);
-const gameStatus = ref('ready'); // 'ready', 'typing', 'finished'
+const gameStatus = ref('waiting');
 const timer = ref(60);
 let timerId = null;
 
