@@ -1,19 +1,21 @@
 <script setup>
-// Mendefinisikan event apa saja yang bisa dikirim komponen ini ke parent
+// TERIMA PROPS DARI INDUK
+defineProps({
+  language: String,
+  duration: Number,
+});
+
+// Logika emit tetap sama
 const emit = defineEmits(['languageChange', 'durationChange', 'start']);
 
-// Fungsi yang akan dijalankan ketika dropdown bahasa berubah
 const handleLanguageChange = (event) => {
   emit('languageChange', event.target.value);
 };
 
-// Fungsi yang akan dijalankan ketika dropdown waktu berubah
 const handleDurationChange = (event) => {
-  // Mengirim nilai sebagai angka, bukan string
   emit('durationChange', parseInt(event.target.value, 10)); 
 };
 
-// Fungsi untuk memberitahu parent bahwa game harus dimulai
 const handleStartClick = () => {
   emit('start');
 };
@@ -25,7 +27,7 @@ const handleStartClick = () => {
       <label for="language" class="text-slate-400">Language:</label>
       <select 
         id="language" 
-        @change="handleLanguageChange" 
+        :value="language" @change="handleLanguageChange" 
         class="bg-slate-700 text-emerald-400 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
       >
         <option value="javascript">JavaScript</option>
@@ -39,7 +41,7 @@ const handleStartClick = () => {
       <label for="duration" class="text-slate-400">Time:</label>
       <select 
         id="duration" 
-        @change="handleDurationChange" 
+        :value="duration" @change="handleDurationChange" 
         class="bg-slate-700 text-emerald-400 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
       >
         <option value="60">1 menit</option>

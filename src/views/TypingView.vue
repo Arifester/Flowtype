@@ -20,6 +20,7 @@ const dedent = (str) => {
   return str;
 };
 
+// State dengan nilai default yang akan jadi "sumber kebenaran"
 const selectedLanguage = ref('javascript');
 const selectedDuration = ref(60);
 const codeSnippet = ref('Selamat datang! Atur bahasa dan waktu, lalu tekan Start.');
@@ -80,6 +81,12 @@ const finishGame = () => {
 const backToMenu = () => {
   gameStatus.value = 'waiting';
   if (timerId) clearInterval(timerId);
+  
+  // Reset state ke nilai default
+  selectedLanguage.value = 'javascript';
+  selectedDuration.value = 60;
+  timer.value = 60;
+
   codeSnippet.value = 'Selamat datang! Atur bahasa dan waktu, lalu tekan Start.';
 };
 
@@ -98,17 +105,26 @@ const calculateResults = () => {
 const focusInput = () => inputField.value?.focus();
 const handleTab = () => { userInput.value += '  '; };
 
+// --- WATCHER DENGAN LOGIKA YANG DIPERBAIKI (BUG #1) ---
 watch(userInput, (newInput) => {
   if (gameStatus.value !== 'ready' && gameStatus.value !== 'typing') return;
   if (gameStatus.value === 'ready' && newInput.length > 0) startTimer();
-  for (let i = 0; i < codeSnippet.value.length; i++) {
-    const typedChar = newInput[i];
-    const originalChar = codeSnippet.value[i];
-    if (typedChar === undefined) charStates.value[i] = 'untyped';
-    else if (typedChar === originalChar) charStates.value[i] = 'correct';
-    else charStates.value[i] = 'incorrect';
-  }
+
+  // Buat array status baru, jangan modifikasi yang lama
+  const newStates = Array.from(codeSnippet.value).map((originalChar, index) => {
+    const typedChar = newInput[index];
+    if (typedChar === undefined) {
+      return 'untyped';
+    } else if (typedChar === originalChar) {
+      return 'correct';
+    } else {
+      return 'incorrect';
+    }
+  });
+
+  charStates.value = newStates; // Ganti array lama dengan yang baru
   currentIndex.value = newInput.length;
+
   if (currentIndex.value === codeSnippet.value.length) {
     const correctInSnippet = charStates.value.filter(state => state === 'correct').length;
     const errorsInSnippet = charStates.value.filter(state => state === 'incorrect').length;
@@ -125,14 +141,13 @@ watch(currentIndex, () => {
     if (cursorEl) cursorEl.scrollIntoView({ block: 'nearest' });
   });
 });
-
 </script>
 
 <template>
   <div class="w-full">
     <Settings
       v-if="gameStatus === 'waiting'"
-      @languageChange="updateLanguage"
+      :language="selectedLanguage" :duration="selectedDuration" @languageChange="updateLanguage"
       @durationChange="updateDuration"
       @start="startGame"
     />
