@@ -6,9 +6,9 @@ if (!apiKey) {
   throw new Error("VITE_GEMINI_API_KEY is not set in .env.local");
 }
 
-// 2. Inisialisasi Klien Gemini
+// 2. Inisialisasi Klien Gemini dengan model FLASH
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 /**
  * Menghasilkan snippet kode dari Gemini API berdasarkan bahasa yang diberikan.
