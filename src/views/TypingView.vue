@@ -7,6 +7,7 @@ import Results from '../components/Results.vue';
 import allSnippets from '../data/snippets.json';
 import { generateCodeSnippet } from '../services/geminiService.js';
 
+// Fungsi dedent tidak berubah
 const dedent = (str) => {
   const lines = str.split('\n');
   if (lines[0] === '') lines.shift();
@@ -21,7 +22,7 @@ const dedent = (str) => {
   return str;
 };
 
-// --- STATE MANAGEMENT ---
+// State Management tidak berubah
 const useAI = ref(false);
 const isLoadingSnippet = ref(false);
 const selectedLanguage = ref('javascript');
@@ -40,7 +41,7 @@ const errors = ref(0);
 const totalCorrectChars = ref(0);
 const totalTypedChars = ref(0);
 
-// --- FUNCTIONS ---
+// Functions
 const updateLanguage = (language) => { selectedLanguage.value = language; };
 const updateDuration = (duration) => {
   selectedDuration.value = duration;
@@ -62,16 +63,23 @@ const loadNextSnippet = async () => {
       codeSnippet.value = dedent(rawSnippet);
     }
   } catch (error) {
-    console.error("Failed to load snippet:", error);
-    codeSnippet.value = "Failed to load snippet. Please try again.";
+    console.warn("AI snippet failed, falling back to static.", error);
+    const filteredSnippets = allSnippets.filter(s => s.language === selectedLanguage.value);
+    const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
+    if (filteredSnippets.length > 0) {
+      const rawSnippet = filteredSnippets[randomIndex].code;
+      codeSnippet.value = dedent(rawSnippet);
+    } else {
+      codeSnippet.value = "Failed to load snippet.";
+    }
   } finally {
     isLoadingSnippet.value = false;
     currentIndex.value = 0;
     charStates.value = Array(codeSnippet.value.length).fill('untyped');
-    nextTick(() => inputField.value?.focus());
   }
 };
 
+// ** PERUBAHAN UTAMA ADA DI FUNGSI INI **
 const startGame = async () => {
   gameStatus.value = 'ready';
   totalCorrectChars.value = 0;
@@ -79,9 +87,17 @@ const startGame = async () => {
   errors.value = 0;
   timer.value = selectedDuration.value;
   if (timerId) clearInterval(timerId);
+
   await loadNextSnippet();
+  
+  // [FIX 2] Panggil fokus secara eksplisit untuk menangani skenario REFRESH.
+  // nextTick memastikan ini berjalan setelah update DOM minimal.
+  nextTick(() => {
+    inputField.value?.focus();
+  });
 };
 
+// Sisa fungsi lainnya tidak berubah
 const startTimer = () => {
   gameStatus.value = 'typing';
   timerId = setInterval(() => {
@@ -103,6 +119,7 @@ const backToMenu = () => {
   selectedDuration.value = 60;
   timer.value = 60;
   codeSnippet.value = 'Welcome! Set your language and time, then press Start.';
+  if (document.activeElement) document.activeElement.blur();
 };
 
 const calculateResults = () => {
@@ -120,23 +137,17 @@ const calculateResults = () => {
 const focusInput = () => inputField.value?.focus();
 const handleTab = () => { userInput.value += '  '; };
 
-// --- WATCHERS ---
-// 1. Tambahkan 'async' di sini agar 'await' di dalamnya berfungsi
+// Watcher userInput tidak berubah
 watch(userInput, async (newInput) => {
   if (gameStatus.value !== 'ready' && gameStatus.value !== 'typing') return;
   if (gameStatus.value === 'ready' && newInput.length > 0) startTimer();
 
   const newStates = Array.from(codeSnippet.value).map((originalChar, index) => {
     const typedChar = newInput[index];
-    if (typedChar === undefined) {
-      return 'untyped';
-    } else if (typedChar === originalChar) {
-      return 'correct';
-    } else {
-      return 'incorrect';
-    }
+    if (typedChar === undefined) return 'untyped';
+    else if (typedChar === originalChar) return 'correct';
+    else return 'incorrect';
   });
-
   charStates.value = newStates;
   currentIndex.value = newInput.length;
 
@@ -146,15 +157,23 @@ watch(userInput, async (newInput) => {
     totalCorrectChars.value += correctInSnippet;
     totalTypedChars.value += codeSnippet.value.length;
     errors.value += errorsInSnippet;
-    await loadNextSnippet(); // Await ini memerlukan function watch untuk jadi async
+    await loadNextSnippet();
   }
 });
 
+// Watcher currentIndex tidak berubah
 watch(currentIndex, () => {
   nextTick(() => {
     const cursorEl = document.getElementById('cursor');
     if (cursorEl) cursorEl.scrollIntoView({ block: 'nearest' });
   });
+});
+
+// [FIX 1] Watcher ini menangani fokus saat elemen input pertama kali DIBUAT.
+watch(inputField, (newEl) => {
+  if (newEl) {
+    newEl.focus();
+  }
 });
 </script>
 
