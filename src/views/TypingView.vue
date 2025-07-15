@@ -1,5 +1,10 @@
-// src/views/TypingView.vue
+Tentu, gan. Ini adalah kode lengkap final untuk `TypingView.vue` yang sudah menggabungkan semua perbaikan bug, fitur, dan perubahan teks ke Bahasa Inggris.
 
+Anda bisa langsung salin dan tempel seluruh isi kode ini ke dalam file `src/views/TypingView.vue` Anda.
+
+### Kode Lengkap Final `TypingView.vue`
+
+```vue
 <script setup>
 import { ref, watch, nextTick } from 'vue';
 import { ArrowPathIcon, ArrowUturnLeftIcon } from '@heroicons/vue/24/solid'
@@ -8,9 +13,8 @@ import CodeDisplay from '../components/CodeDisplay.vue';
 import Results from '../components/Results.vue';
 import allSnippets from '../data/snippets.json';
 import { generateCodeSnippet } from '../services/geminiService.js';
-import { useNotification } from '../composables/useNotification.js'; // <-- IMPORT NOTIFIKASI
+import { useNotification } from '../composables/useNotification.js';
 
-// Ambil fungsi showNotification dari composable
 const { showNotification } = useNotification();
 
 const dedent = (str) => {
@@ -27,12 +31,11 @@ const dedent = (str) => {
   return str;
 };
 
-// --- STATE MANAGEMENT & TEKS BARU ---
+// --- STATE MANAGEMENT ---
 const useAI = ref(false);
 const isLoadingSnippet = ref(false);
 const selectedLanguage = ref('javascript');
 const selectedDuration = ref(60);
-// Mengubah teks ke Bahasa Inggris
 const codeSnippet = ref('Welcome! Set your language and time, then press Start.');
 const userInput = ref('');
 const charStates = ref([]);
@@ -70,43 +73,22 @@ const loadNextSnippet = async () => {
     }
   } catch (error) {
     console.warn("AI snippet failed, falling back to static snippet.", error);
-    // [FITUR BARU] Panggil notifikasi saat AI gagal
     showNotification('AI snippet failed. Loading a static one instead.', 'info');
-
     const filteredSnippets = allSnippets.filter(s => s.language === selectedLanguage.value);
     const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
     if (filteredSnippets.length > 0) {
       const rawSnippet = filteredSnippets[randomIndex].code;
       codeSnippet.value = dedent(rawSnippet);
     } else {
-      // Mengubah teks ke Bahasa Inggris
       codeSnippet.value = "Failed to load AI & static snippets.";
     }
   } finally {
     isLoadingSnippet.value = false;
     currentIndex.value = 0;
     charStates.value = Array(codeSnippet.value.length).fill('untyped');
-    setTimeout(() => {
-      nextTick(() => {
-        inputField.value?.focus();
-      });
-    }, 50);
   }
 };
 
-const backToMenu = () => {
-  // ... (sisa fungsi backToMenu tidak berubah)
-  gameStatus.value = 'waiting';
-  if (timerId) clearInterval(timerId);
-  selectedLanguage.value = 'javascript';
-  selectedDuration.value = 60;
-  timer.value = 60;
-  // Mengubah teks ke Bahasa Inggris
-  codeSnippet.value = 'Welcome! Set your language and time, then press Start.';
-  if (document.activeElement) document.activeElement.blur();
-};
-
-// ... sisa kode lainnya di dalam <script setup> tidak ada yang berubah ...
 const startGame = async () => {
   gameStatus.value = 'ready';
   totalCorrectChars.value = 0;
@@ -115,6 +97,10 @@ const startGame = async () => {
   timer.value = selectedDuration.value;
   if (timerId) clearInterval(timerId);
   await loadNextSnippet();
+  
+  nextTick(() => {
+    inputField.value?.focus();
+  });
 };
 
 const startTimer = () => {
@@ -129,6 +115,16 @@ const finishGame = () => {
   clearInterval(timerId);
   gameStatus.value = 'finished';
   calculateResults();
+};
+
+const backToMenu = () => {
+  gameStatus.value = 'waiting';
+  if (timerId) clearInterval(timerId);
+  selectedLanguage.value = 'javascript';
+  selectedDuration.value = 60;
+  timer.value = 60;
+  codeSnippet.value = 'Welcome! Set your language and time, then press Start.';
+  if (document.activeElement) document.activeElement.blur();
 };
 
 const calculateResults = () => {
@@ -146,9 +142,11 @@ const calculateResults = () => {
 const focusInput = () => inputField.value?.focus();
 const handleTab = () => { userInput.value += '  '; };
 
+// --- WATCHERS ---
 watch(userInput, async (newInput) => {
   if (gameStatus.value !== 'ready' && gameStatus.value !== 'typing') return;
   if (gameStatus.value === 'ready' && newInput.length > 0) startTimer();
+
   const newStates = Array.from(codeSnippet.value).map((originalChar, index) => {
     const typedChar = newInput[index];
     if (typedChar === undefined) return 'untyped';
@@ -157,6 +155,7 @@ watch(userInput, async (newInput) => {
   });
   charStates.value = newStates;
   currentIndex.value = newInput.length;
+
   if (currentIndex.value === codeSnippet.value.length) {
     const correctInSnippet = charStates.value.filter(state => 'correct' === state).length;
     const errorsInSnippet = charStates.value.filter(state => 'incorrect' === state).length;
@@ -166,11 +165,18 @@ watch(userInput, async (newInput) => {
     await loadNextSnippet();
   }
 });
+
 watch(currentIndex, () => {
   nextTick(() => {
     const cursorEl = document.getElementById('cursor');
     if (cursorEl) cursorEl.scrollIntoView({ block: 'nearest' });
   });
+});
+
+watch(inputField, (newEl) => {
+  if (newEl) {
+    newEl.focus();
+  }
 });
 </script>
 
@@ -189,13 +195,13 @@ watch(currentIndex, () => {
     <Transition name="fade" mode="out-in">
       <div v-if="gameStatus === 'typing' || gameStatus === 'ready'">
         <div class="flex justify-center items-center gap-4 md:gap-6 mb-6">
-          <button @click="backToMenu" title="Kembali ke Menu" class="text-slate-500 hover:text-emerald-400 transition-colors">
+          <button @click="backToMenu" title="Back to Menu" class="text-slate-500 hover:text-emerald-400 transition-colors">
             <ArrowUturnLeftIcon class="h-8 w-8" />
           </button>
           <div class="text-center text-5xl font-bold text-emerald-400 w-28">
             {{ timer }}
           </div>
-          <button @click="startGame" title="Ulangi Sesi" class="text-slate-500 hover:text-emerald-400 transition-colors">
+          <button @click="startGame" title="Restart Session" class="text-slate-500 hover:text-emerald-400 transition-colors">
             <ArrowPathIcon class="h-8 w-8" />
           </button>
         </div>
@@ -231,7 +237,7 @@ watch(currentIndex, () => {
         @retry="backToMenu"
       />
 
-      <div v-else-if="gameStatus === 'waiting'" class="text-center text-slate-500 p-10 bg-slate-800 rounded-lg">
+      <div v-else class="text-center text-slate-500 p-10 bg-slate-800 rounded-lg">
         {{ codeSnippet }}
       </div>
     </Transition>
