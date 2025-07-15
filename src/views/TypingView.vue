@@ -1,3 +1,5 @@
+// src/views/TypingView.vue
+
 <script setup>
 import { ref, watch, nextTick } from 'vue';
 import { ArrowPathIcon, ArrowUturnLeftIcon } from '@heroicons/vue/24/solid'
@@ -6,8 +8,11 @@ import CodeDisplay from '../components/CodeDisplay.vue';
 import Results from '../components/Results.vue';
 import allSnippets from '../data/snippets.json';
 import { generateCodeSnippet } from '../services/geminiService.js';
+import { useNotification } from '../composables/useNotification.js'; // <-- IMPORT NOTIFIKASI
 
-// Fungsi dedent tidak berubah
+// Ambil fungsi showNotification dari composable
+const { showNotification } = useNotification();
+
 const dedent = (str) => {
   const lines = str.split('\n');
   if (lines[0] === '') lines.shift();
@@ -22,11 +27,12 @@ const dedent = (str) => {
   return str;
 };
 
-// State Management tidak berubah
+// --- STATE MANAGEMENT & TEKS BARU ---
 const useAI = ref(false);
 const isLoadingSnippet = ref(false);
 const selectedLanguage = ref('javascript');
 const selectedDuration = ref(60);
+// Mengubah teks ke Bahasa Inggris
 const codeSnippet = ref('Welcome! Set your language and time, then press Start.');
 const userInput = ref('');
 const charStates = ref([]);
@@ -41,7 +47,7 @@ const errors = ref(0);
 const totalCorrectChars = ref(0);
 const totalTypedChars = ref(0);
 
-// Functions
+// --- FUNCTIONS ---
 const updateLanguage = (language) => { selectedLanguage.value = language; };
 const updateDuration = (duration) => {
   selectedDuration.value = duration;
@@ -63,23 +69,44 @@ const loadNextSnippet = async () => {
       codeSnippet.value = dedent(rawSnippet);
     }
   } catch (error) {
-    console.warn("AI snippet failed, falling back to static.", error);
+    console.warn("AI snippet failed, falling back to static snippet.", error);
+    // [FITUR BARU] Panggil notifikasi saat AI gagal
+    showNotification('AI snippet failed. Loading a static one instead.', 'info');
+
     const filteredSnippets = allSnippets.filter(s => s.language === selectedLanguage.value);
     const randomIndex = Math.floor(Math.random() * filteredSnippets.length);
     if (filteredSnippets.length > 0) {
       const rawSnippet = filteredSnippets[randomIndex].code;
       codeSnippet.value = dedent(rawSnippet);
     } else {
-      codeSnippet.value = "Failed to load snippet.";
+      // Mengubah teks ke Bahasa Inggris
+      codeSnippet.value = "Failed to load AI & static snippets.";
     }
   } finally {
     isLoadingSnippet.value = false;
     currentIndex.value = 0;
     charStates.value = Array(codeSnippet.value.length).fill('untyped');
+    setTimeout(() => {
+      nextTick(() => {
+        inputField.value?.focus();
+      });
+    }, 50);
   }
 };
 
-// ** PERUBAHAN UTAMA ADA DI FUNGSI INI **
+const backToMenu = () => {
+  // ... (sisa fungsi backToMenu tidak berubah)
+  gameStatus.value = 'waiting';
+  if (timerId) clearInterval(timerId);
+  selectedLanguage.value = 'javascript';
+  selectedDuration.value = 60;
+  timer.value = 60;
+  // Mengubah teks ke Bahasa Inggris
+  codeSnippet.value = 'Welcome! Set your language and time, then press Start.';
+  if (document.activeElement) document.activeElement.blur();
+};
+
+// ... sisa kode lainnya di dalam <script setup> tidak ada yang berubah ...
 const startGame = async () => {
   gameStatus.value = 'ready';
   totalCorrectChars.value = 0;
@@ -87,17 +114,9 @@ const startGame = async () => {
   errors.value = 0;
   timer.value = selectedDuration.value;
   if (timerId) clearInterval(timerId);
-
   await loadNextSnippet();
-  
-  // [FIX 2] Panggil fokus secara eksplisit untuk menangani skenario REFRESH.
-  // nextTick memastikan ini berjalan setelah update DOM minimal.
-  nextTick(() => {
-    inputField.value?.focus();
-  });
 };
 
-// Sisa fungsi lainnya tidak berubah
 const startTimer = () => {
   gameStatus.value = 'typing';
   timerId = setInterval(() => {
@@ -110,16 +129,6 @@ const finishGame = () => {
   clearInterval(timerId);
   gameStatus.value = 'finished';
   calculateResults();
-};
-
-const backToMenu = () => {
-  gameStatus.value = 'waiting';
-  if (timerId) clearInterval(timerId);
-  selectedLanguage.value = 'javascript';
-  selectedDuration.value = 60;
-  timer.value = 60;
-  codeSnippet.value = 'Welcome! Set your language and time, then press Start.';
-  if (document.activeElement) document.activeElement.blur();
 };
 
 const calculateResults = () => {
@@ -137,11 +146,9 @@ const calculateResults = () => {
 const focusInput = () => inputField.value?.focus();
 const handleTab = () => { userInput.value += '  '; };
 
-// Watcher userInput tidak berubah
 watch(userInput, async (newInput) => {
   if (gameStatus.value !== 'ready' && gameStatus.value !== 'typing') return;
   if (gameStatus.value === 'ready' && newInput.length > 0) startTimer();
-
   const newStates = Array.from(codeSnippet.value).map((originalChar, index) => {
     const typedChar = newInput[index];
     if (typedChar === undefined) return 'untyped';
@@ -150,7 +157,6 @@ watch(userInput, async (newInput) => {
   });
   charStates.value = newStates;
   currentIndex.value = newInput.length;
-
   if (currentIndex.value === codeSnippet.value.length) {
     const correctInSnippet = charStates.value.filter(state => 'correct' === state).length;
     const errorsInSnippet = charStates.value.filter(state => 'incorrect' === state).length;
@@ -160,20 +166,11 @@ watch(userInput, async (newInput) => {
     await loadNextSnippet();
   }
 });
-
-// Watcher currentIndex tidak berubah
 watch(currentIndex, () => {
   nextTick(() => {
     const cursorEl = document.getElementById('cursor');
     if (cursorEl) cursorEl.scrollIntoView({ block: 'nearest' });
   });
-});
-
-// [FIX 1] Watcher ini menangani fokus saat elemen input pertama kali DIBUAT.
-watch(inputField, (newEl) => {
-  if (newEl) {
-    newEl.focus();
-  }
 });
 </script>
 
