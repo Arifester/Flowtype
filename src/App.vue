@@ -25,7 +25,7 @@ const { notification } = useNotification();
     </main>
 
     <footer class="w-full text-center mt-12 text-slate-500 text-sm">
-      <p>Built with Cihuy using Vue.js & Tailwind CSS</p>
+      <p>Built with Vue.js & Tailwind CSS</p>
     </footer>
   </div>
 </template>
